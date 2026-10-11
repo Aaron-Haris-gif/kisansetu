@@ -1,0 +1,4 @@
+import jwt from 'jsonwebtoken'; import {env} from './config.js'; import {User} from './models.js';
+export const auth=async(req,res,next)=>{const token=req.headers.authorization?.replace('Bearer ',''); if(!token)return res.status(401).json({message:'Authentication required'}); try{req.user=await User.findById(jwt.verify(token,env.jwt).id); if(!req.user||!req.user.isActive)throw Error(); next()}catch{res.status(401).json({message:'Invalid or expired session'})}};
+export const allow=(...roles)=>(req,res,next)=>roles.includes(req.user?.role)?next():res.status(403).json({message:'You do not have permission for this action'});
+export const error=(err,req,res,next)=>{console.error(err); if(err.name==='ValidationError')return res.status(400).json({message:err.message}); if(err.code===11000)return res.status(409).json({message:'That value already exists'}); res.status(err.status||500).json({message:err.message||'Server error'})};
